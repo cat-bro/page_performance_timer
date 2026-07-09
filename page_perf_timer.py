@@ -139,7 +139,9 @@ class PagePerfTimer(object):
     def find_login_button(self):
         with SeleniumCustomWait(self.driver, 0):
             try:
-                return self.driver.find_element(By.NAME, "login")
+                return self.driver.find_element(
+                    By.XPATH, "//input[@name='login' or @name='username' or @id='username']"
+                )
             except NoSuchElementException:
                 return None
 
@@ -152,11 +154,11 @@ class PagePerfTimer(object):
             except NoSuchElementException:
                 return None
 
-    def find_biocommons_login_button(self):
+    def find_password_input(self):
         with SeleniumCustomWait(self.driver, 0):
             try:
                 return self.driver.find_element(
-                    By.XPATH, "//button[contains(., 'BioCommons Access')]"
+                    By.XPATH, "//input[@name='password' or @id='password']"
                 )
             except NoSuchElementException:
                 return None
@@ -165,8 +167,6 @@ class PagePerfTimer(object):
         if self.find_login_button():
             return True
         elif self.find_sign_in_with_email():
-            return True
-        elif self.find_biocommons_login_button():
             return True
         else:
             return False
@@ -202,35 +202,25 @@ class PagePerfTimer(object):
             )
         )
 
-    def login_with_biocommons(self):
-        self.find_biocommons_login_button().click()
-        self.wait.until(
-            expected_conditions.presence_of_element_located((By.ID, "username"))
-        ).send_keys(self.username)
-        password_input = self.driver.find_element(By.ID, "password")
-        password_input.send_keys(self.password)
-        password_input.send_keys(Keys.ENTER)
-
     def login_with_galaxy_internal_login(self):
         elem = self.find_sign_in_with_email()
-        # if sign in with email is available, this is galaxy-au's customised page.
+        # Some deployments gate the form behind an extra email-login link.
         if elem:
             elem.click()
+        username_input = self.wait.until(lambda driver: self.find_login_button())
+        password_input = self.wait.until(lambda driver: self.find_password_input())
         # Click username textbox
-        self.driver.find_element(By.NAME, "login").click()
+        username_input.click()
         # Type in username
-        self.driver.find_element(By.NAME, "login").send_keys(self.username)
+        username_input.send_keys(self.username)
         # Type in password
-        self.driver.find_element(By.NAME, "password").send_keys(self.password)
+        password_input.send_keys(self.password)
         # Submit login form
-        self.driver.find_element(By.NAME, "password").send_keys(Keys.ENTER)
+        password_input.send_keys(Keys.ENTER)
 
     @clock_action("home_page_load")
     def login_to_galaxy_homepage(self):
-        if self.find_biocommons_login_button():
-            self.login_with_biocommons()
-        else:
-            self.login_with_galaxy_internal_login()
+        self.login_with_galaxy_internal_login()
         self.wait_for_galaxy_homepage()
 
     @clock_action("dummy_file_upload")
