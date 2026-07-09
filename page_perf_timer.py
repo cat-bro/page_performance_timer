@@ -209,11 +209,11 @@ class PagePerfTimer(object):
             elem.click()
         username_input = self.wait.until(lambda driver: self.find_login_button())
         password_input = self.wait.until(lambda driver: self.find_password_input())
-        # Click username textbox
-        username_input.click()
         # Type in username
+        username_input.clear()
         username_input.send_keys(self.username)
         # Type in password
+        password_input.clear()
         password_input.send_keys(self.password)
         # Submit login form
         password_input.send_keys(Keys.ENTER)
